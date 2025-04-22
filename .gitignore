@@ -1,0 +1,17 @@
+# Python runtime files
+__pycache__/
+*.pyc
+
+# Virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# Database file
+*.db
+*.db-journal # SQLite temporary file
+
+# IDE / Editor specific
+.idea/
+.vscode/
