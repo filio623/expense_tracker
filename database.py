@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import datetime
 
 DATABASE_FILE = "expenses.db"
 
@@ -56,6 +57,44 @@ def create_table(conn):
         print(f"Error creating table: {e}")
         return False
     
+def add_expense(date, description, category, amount):
+    """
+    Adds a new expense record to the database.
+
+    Args:
+        date (str): The date of the expense (e.g., 'YYYY-MM-DD').
+        description (str): A description of the expense.
+        category (str): The category of the expense.
+        amount (float): The amount of the expense.
+
+    Returns:
+        bool: True if the expense was added successfully, False otherwise.
+    """
+    conn = get_db_connection()
+    if conn is None:
+        print("No database connection exists: cannot add expense")
+        return False
+    
+    # SQL command to insert data.
+    # Using placeholders (?) is crucial to prevent SQL injection vulnerabilities.
+    insert_sql = """
+    INSERT INTO expenses (date, description, category, amount)
+    VALUES (?, ?, ?, ?);
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute(insert_sql, (date, description, category, amount))
+        conn.commit() # Commit the changes to save them
+        print("Successfully added expense")
+        return True
+    except sqlite3.Error as e:
+        print(f"An error occurred adding expense: {e}")
+        conn.rollback()
+        return False
+    finally:
+        if conn:
+            conn.close()
+    
 def init_database():
     """
     Initializes the database: connects and creates the table if necessary.
@@ -74,9 +113,24 @@ def init_database():
 
         #Test Block
 if __name__ == "__main__":
-    init_database()
-    # You can optionally add code here to check if the expenses.db file
-    # was created in the same directory as database.py
+    print("-" * 20)
+    init_database() # Make sure table exists
+    print("-" * 20)
+
+    # --- Test adding an expense ---
+    print("Testing add_expense function...")
+    today_date = datetime.date.today().strftime('%Y-%m-%d') # Get today's date as YYYY-MM-DD
+    description = "Coffee"
+    category = "Food & Drink"
+    amount = 3.75
+
+    if add_expense(today_date, description, category, amount):
+        print(f"Successfully added test expense: {description}")
+    else:
+        print(f"Failed to add test expense: {description}")
+
+    print("-" * 20)
+    # Check if the database file exists
     db_file_path = os.path.join(os.path.dirname(__file__), DATABASE_FILE)
     if os.path.exists(db_file_path):
         print(f"Database file '{DATABASE_FILE}' found.")
