@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from database import add_expense, get_all_expenses, init_database
 
 class ExpenseTrackerGUI:
     """
@@ -26,7 +27,7 @@ class ExpenseTrackerGUI:
         self._create_display_frame()
 
         # --- Load initial data ---
-        # self._load_expenses() # We'll implement this later
+        self._load_expenses() # We'll implement this later
 
     def _create_input_frame(self):
         """Creates the frame for input fields and the add button."""
@@ -97,7 +98,7 @@ class ExpenseTrackerGUI:
         # TODO: Add buttons for Delete/Edit later?
         # TODO: Add summary labels (e.g., Total Expenses) later?
 
-    def _add_expense_callback(self):
+    def _add_expense_callback(self, event=None):
         """Handles the 'Add Expense' button click."""
         # --- Get data from entry fields ---
         date = self.date_entry.get()
@@ -113,43 +114,58 @@ class ExpenseTrackerGUI:
         try:
             # Convert amount to float
             amount = float(amount_str)
+            if amount <= 0: # Add check for non-positive amount
+                 messagebox.showerror("Input Error", "Amount must be positive.")
+                 return
         except ValueError:
-            messagebox.showerror("Error", "Amount must be a valid number.")
+            messagebox.showerror("Input Error", "Amount must be a valid number.")
             return
 
         # --- Call database function (placeholder) ---
         print(f"Attempting to add: Date={date}, Desc={description}, Cat={category}, Amt={amount}")
-        # success = add_expense(date, description, category, amount) # UNCOMMENT LATER
+        success = add_expense(date, description, category, amount)
 
         # --- Update display and clear fields (placeholder) ---
-        # if success: # UNCOMMENT LATER
-        if True: # TEMPORARY: Assume success for now
+        if success: 
             messagebox.showinfo("Success", "Expense added successfully!") # Placeholder feedback
             self._clear_input_fields()
-            # self._load_expenses() # UNCOMMENT LATER: Refresh the list
+            self._load_expenses() #Refresh the list
         else:
             messagebox.showerror("Database Error", "Failed to add expense to the database.")
 
+    def _clear_input_fields(self):
+        """Clears the content of the input entry fields."""
+        self.date_entry.delete(0, tk.END)
+        self.desc_entry.delete(0, tk.END)
+        self.category_entry.delete(0, tk.END)
+        self.amount_entry.delete(0, tk.END)
+        # Optional: Set focus back to the first field
+        # self.date_entry.focus_set()
+
     # --- Placeholder for loading data ---
-    # def _load_expenses(self):
-    #     """Clears the Treeview and loads all expenses from the database."""
-    #     # Clear existing items in the tree
-    #     for item in self.tree.get_children():
-    #         self.tree.delete(item)
-    #
-    #     # Get expenses from database
-    #     expenses = get_all_expenses() # UNCOMMENT LATER
-    #     expenses = [] # TEMPORARY: Empty list for now
-    #
-    #     # Insert expenses into the treeview
-    #     for expense in expenses:
-    #         self.tree.insert('', tk.END, values=(
-    #             expense['id'],
-    #             expense['date'],
-    #             expense['description'],
-    #             expense['category'],
-    #             f"{expense['amount']:.2f}" # Format amount to 2 decimal places
-    #         ))
+    def _load_expenses(self):
+        """Clears the Treeview and loads all expenses from the database."""
+        # Clear existing items in the tree
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+    
+        # Get expenses from database
+        print("Loading expenses from database....")
+        expenses = get_all_expenses()
+        print(f"Found {len(expenses)} expenses")
+    
+        # Insert expenses into the treeview
+        for expense in expenses:
+            formatted_amount = f"{expense['amount']:.2f}"
+            self.tree.insert('', tk.END, values=(
+                expense['id'],
+                expense['date'],
+                expense['description'],
+                expense['category'],
+                formatted_amount # Format amount to 2 decimal places
+            ))
+        print("Finished loading expenses into Treeview.")
+        self.root.update_idletasks() # Force GUI to process updates
 
 # --- Main execution block (Should be in main.py) ---
 # if __name__ == "__main__":
