@@ -94,6 +94,49 @@ def add_expense(date, description, category, amount):
     finally:
         if conn:
             conn.close()
+
+def get_all_expenses():
+    """
+    Retrieves all expense records from the database, ordered by date ascending.
+
+    Returns:
+        list: A list of dictionaries, where each dictionary represents an expense.
+              Returns an empty list if no expenses are found or an error occurs.
+    """
+    conn = get_db_connection()
+    if conn is None:
+        print("Error getting expenses: No Connection")
+        return []
+    
+    # SQL command to select all columns from the expenses table
+    # Ordered by date (oldest first)
+    select_sql = "SELECT id, date, description, category, amount FROM expenses ORDER BY date ASC;"
+
+    expenses = []
+    try:
+        cursor = conn.cursor()
+        cursor.execute(select_sql)
+        rows = cursor.fetchall()
+
+        for row in rows:
+            # --- MODIFIED BLOCK ---
+            expense_dict = {
+                'id': row[0],          # First column selected (id)
+                'date': row[1],        # Second column selected (date)
+                'description': row[2], # Third column selected (description)
+                'category': row[3],    # Fourth column selected (category)
+                'amount': row[4]       # Fifth column selected (amount)
+            }
+            expenses.append(expense_dict)
+            # --- END MODIFIED BLOCK ---
+        return expenses
+    except sqlite3.Error as e:
+        print(f"Error retrieving expenses: {e}")
+        return []
+    finally:
+        if conn:
+            conn.close()
+    
     
 def init_database():
     """
@@ -120,9 +163,9 @@ if __name__ == "__main__":
     # --- Test adding an expense ---
     print("Testing add_expense function...")
     today_date = datetime.date.today().strftime('%Y-%m-%d') # Get today's date as YYYY-MM-DD
-    description = "Coffee"
-    category = "Food & Drink"
-    amount = 3.75
+    description = "Groceries"
+    category = "Food"
+    amount = 55.20
 
     if add_expense(today_date, description, category, amount):
         print(f"Successfully added test expense: {description}")
@@ -130,6 +173,23 @@ if __name__ == "__main__":
         print(f"Failed to add test expense: {description}")
 
     print("-" * 20)
+
+    # --- Test retrieving expenses ---
+    print("Testing get_all_expenses function...")
+    all_expenses = get_all_expenses()
+
+    if all_expenses:
+        print(f"Total expenses retrieved: {len(all_expenses)}")
+        print("--- Expenses ---")
+        for expense in all_expenses:
+            # Print each expense dictionary
+            print(expense)
+        print("----------------")
+    else:
+        print("No expenses found or error retrieving expenses.")
+
+    print("-" * 20)
+
     # Check if the database file exists
     db_file_path = os.path.join(os.path.dirname(__file__), DATABASE_FILE)
     if os.path.exists(db_file_path):
